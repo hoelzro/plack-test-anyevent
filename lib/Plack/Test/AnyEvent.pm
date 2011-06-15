@@ -9,7 +9,6 @@ use autodie qw(pipe);
 use AnyEvent::Handle;
 use Carp;
 use HTTP::Request;
-use HTTP::Response;
 use HTTP::Message::PSGI;
 use IO::Handle;
 use Try::Tiny;
@@ -34,7 +33,7 @@ sub test_psgi {
         my $res = try {
             $app->($env);
         } catch {
-            HTTP::Response->from_psgi([ 500, [ 'Content-Type' => 'text/plain' ], [ $_ ] ]);
+            Plack::Test::AnyEvent::Response->from_psgi([ 500, [ 'Content-Type' => 'text/plain' ], [ $_ ] ]);
         };
 
         if(ref($res) eq 'CODE') {
@@ -62,7 +61,7 @@ sub test_psgi {
             }
 
             if(defined $body) {
-                $res = HTTP::Response->from_psgi([ $status, $headers, $body ]);
+                $res = Plack::Test::AnyEvent::Response->from_psgi([ $status, $headers, $body ]);
             } else {
                 push @$headers, 'Transfer-Encoding', 'chunked';
                 $res = Plack::Test::AnyEvent::Response->from_psgi([ $status, $headers, [] ]);
@@ -93,7 +92,7 @@ sub test_psgi {
                 );
             }
         } else {
-            $res = HTTP::Response->from_psgi($res);
+            $res = Plack::Test::AnyEvent::Response->from_psgi($res);
             $res->request($req);
         }
 
