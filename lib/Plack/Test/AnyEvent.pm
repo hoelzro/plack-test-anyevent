@@ -85,7 +85,11 @@ sub test_psgi {
                     on_eof => sub {
                         $res->send;
                     },
-                    ## handle errors
+                    on_error => sub {
+                        my ( undef, undef, $msg ) = @_;
+                        warn $msg;
+                        $res->send;
+                    },
                 );
             }
         } else {
