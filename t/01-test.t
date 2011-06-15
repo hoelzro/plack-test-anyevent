@@ -78,6 +78,10 @@ my $infinite_app = sub {
         $timer = AnyEvent->timer(
             interval => 1,
             cb       => sub {
+                local $SIG{__WARN__} = sub {}; # $writer complains if its been
+                                               # closed, and rightfully so.
+                                               # We just don't want trouble
+                                               # during testing.
                 $writer->write($i++);
                 ( undef ) = $timer; # keep a reference to $timer
             },
