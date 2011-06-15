@@ -10,3 +10,17 @@ BEGIN {
 }
 
 1;
+
+=pod
+
+=begin comment
+
+=over
+
+=item test_psgi
+
+=back
+
+=end comment
+
+=cut

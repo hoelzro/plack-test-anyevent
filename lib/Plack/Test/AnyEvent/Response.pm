@@ -36,3 +36,23 @@ sub on_content_received {
 }
 
 1;
+
+=pod
+
+=begin comment
+
+=over
+
+=item from_psgi
+
+=item send
+
+=item recv
+
+=item on_content_received
+
+=back
+
+=end comment
+
+=cut
