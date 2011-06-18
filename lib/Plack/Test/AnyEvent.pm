@@ -136,7 +136,7 @@ or L<Plack::Test::Server> work fine for this, but this implementation comes
 in handy when you'd like to test your streaming results as they come in, or
 if your application uses long-polling.  For non-streaming requests, you can
 use this module exactly like Plack::Test::MockHTTP; otherwise, you can set
-up a content handler and call C<$res-&lt;recv>.  The event loop will then
+up a content handler and call C<$res-E<gt>recv>.  The event loop will then
 run until the PSGI application closes its writer handle or until your test
 client calls C<send> on the response.
 
