@@ -2,8 +2,10 @@ use strict;
 use warnings;
 
 use HTTP::Request::Common;
-use Test::More tests => 36;
+use Test::More tests => 60;
+use Scalar::Util qw(weaken);
 use Test::More;
+use Test::Exception;
 use Plack::Test;
 
 my $simple_app = sub {
@@ -89,6 +91,191 @@ my $infinite_app = sub {
     };
 };
 
+my $bad_app = sub {
+    die "bad apple";
+};
+
+my $responsible_app = sub {
+    eval {
+        die "good apple";
+    };
+    return [
+        200,
+        ['Content-Type' => 'text/plain'],
+        ['All Alright'],
+    ];
+};
+
+my $bad_app_delayed = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                undef $timer;
+                die "bad apple";
+            },
+        );
+    };
+};
+
+my $responsible_app_delayed = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                undef $timer;
+                eval {
+                    die "bad apple";
+                };
+                $respond->([
+                    200,
+                    ['Content-Type' => 'text/plain'],
+                    ['All Alright'],
+                ]);
+            },
+        );
+    };
+};
+
+my $bad_app_delayed2 = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                undef $timer;
+                $respond->([
+                    200,
+                    ['Content-Type' => 'text/plain'],
+                    'Hey!',
+                ]);
+                die "bad apple";
+            },
+        );
+    };
+};
+
+my $responsible_app_delayed2 = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                undef $timer;
+                $respond->([
+                    200,
+                    ['Content-Type' => 'text/plain'],
+                    'Hey!',
+                ]);
+                eval {
+                    die "bad apple";
+                };
+            },
+        );
+    };
+};
+
+my $bad_app_delayed3 = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        die "bad apple";
+    };
+};
+
+my $responsible_app_delayed3 = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        eval {
+            die "bad apple";
+        };
+        $respond->([
+            200,
+            ['Content-Type' => 'text/plain'],
+            ['All Alright'],
+        ]);
+    };
+};
+
+my $bad_app_streaming = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                my $writer = $respond->([
+                    200,
+                    ['Content-Type' => 'text/plain'],
+                ]);
+
+                $timer = AnyEvent->timer(
+                    after => 0.5,
+                    cb    => sub {
+                        die "bad apple";
+                    },
+                );
+            },
+        );
+    };
+};
+
+my $responsible_app_streaming = sub {
+    my ( $env ) = @_;
+
+    return sub {
+        my ( $respond ) = @_;
+
+        my $timer;
+        $timer = AnyEvent->timer(
+            after => 0.5,
+            cb    => sub {
+                my $writer = $respond->([
+                    200,
+                    ['Content-Type' => 'text/plain'],
+                ]);
+
+                $timer = AnyEvent->timer(
+                    after => 0.5,
+                    cb    => sub {
+                        eval {
+                            die "bad apple";
+                        };
+                        $writer->write('All Alright');
+                        $writer->close;
+                    },
+                );
+            },
+        );
+    };
+};
+
 my @impls = qw(AnyEvent AE);
 
 foreach $Plack::Test::Impl (@impls) {
@@ -144,4 +331,94 @@ foreach $Plack::Test::Impl (@impls) {
         });
         $res->recv;
     };
+
+    test_psgi $bad_app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+    };
+
+    test_psgi $responsible_app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+
+    test_psgi $bad_app_delayed, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+    };
+
+    test_psgi $responsible_app_delayed, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+
+    test_psgi $bad_app_delayed2, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+
+    test_psgi $responsible_app_delayed2, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+
+    test_psgi $bad_app_delayed3, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+    };
+
+    test_psgi $responsible_app_delayed3, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+
+    test_psgi $bad_app_streaming, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        my $timer = AnyEvent->timer(
+            after => 5,
+            cb    => sub {
+                $res->send; # self-inflicted timeout
+            },
+        );
+        is $res->code, 200;
+        $res->on_content_received(sub {
+            # no-op
+        });
+        throws_ok {
+            $res->recv;
+        } qr/bad apple/;
+    };
+
+    test_psgi $responsible_app_streaming, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+        $res->on_content_received(sub {
+            # no-op
+        });
+        lives_ok {
+            $res->recv;
+        };
+    };
 }
+
+done_testing;
