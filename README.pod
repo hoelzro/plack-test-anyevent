@@ -63,6 +63,11 @@ the event loop when you're done testing.
 Sets a callback to be called when a chunk is received from the application.
 A single argument is passed to the callback; namely, the chunk itself.
 
+=head1 EXCEPTION HANDLING
+
+As of version 0.02, this module handles uncaught exceptions thrown by your code.
+If the exception occurs before
+
 =head1 SEE ALSO
 
 L<AnyEvent>, L<Plack>, L<Plack::Test>
