@@ -5,6 +5,7 @@ use warnings;
 use parent 'Test::Class';
 
 use HTTP::Request::Common;
+use Test::Exception;
 use Test::More;
 use Plack::Test;
 
@@ -153,6 +154,304 @@ sub test_infinite_app :Test(6) {
             }
         });
         $res->recv;
+    };
+}
+
+sub test_bad_app :Test(1) {
+    my $app = sub {
+        die "bad apple";
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+    };
+}
+
+sub test_responsible_app :Test {
+    my $app = sub {
+        eval {
+            die "good apple";
+        };
+        return [
+            200,
+            ['Content-Type' => 'text/plain'],
+            ['All Alright'],
+        ];
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+}
+
+sub test_bad_delayed_app :Test {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    undef $timer;
+                    die "bad apple";
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+    };
+}
+
+sub test_responsible_delayed_app :Test {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    undef $timer;
+                    eval {
+                        die "bad apple";
+                    };
+                    $respond->([
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                        ['All Alright'],
+                    ]);
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+    };
+}
+
+sub test_bad_app_die_post_response :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    undef $timer;
+                    $respond->([
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                        'Hey!',
+                    ]);
+                    die "bad apple";
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+        like $res->content, qr/bad apple/;
+    };
+}
+
+sub test_responsible_app_die_post_response :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    undef $timer;
+                    $respond->([
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                        ['Hey!'],
+                    ]);
+                    eval {
+                        die "bad apple";
+                    };
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+        like $res->content, qr/Hey!/;
+    };
+}
+
+sub test_bad_app_die_in_response :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            die "bad apple";
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 500;
+        like $res->content, qr/bad apple/;
+    };
+}
+
+sub test_responsible_app_die_in_response :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            eval {
+                die "bad apple";
+            };
+            $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+                ['All Alright'],
+            ]);
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+        like $res->content, qr/All Alright/;
+    };
+}
+
+sub test_bad_app_streaming :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    my $writer = $respond->([
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                    ]);
+
+                    $timer = AnyEvent->timer(
+                        after => 0.5,
+                        cb    => sub {
+                            undef $timer;
+                            die "bad apple";
+                        },
+                    );
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        my $timer = AnyEvent->timer(
+            after => 5,
+            cb    => sub {
+                $res->send; # self-inflicted timeout
+            },
+        );
+        is $res->code, 200;
+        $res->on_content_received(sub {
+            # no-op
+        });
+        throws_ok {
+            $res->recv;
+        } qr/bad apple/;
+    };
+}
+
+sub test_responsible_app_streaming :Test(2) {
+    my $app = sub {
+        my ( $env ) = @_;
+
+        return sub {
+            my ( $respond ) = @_;
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 0.5,
+                cb    => sub {
+                    my $writer = $respond->([
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                    ]);
+
+                    $timer = AnyEvent->timer(
+                        after => 0.5,
+                        cb    => sub {
+                            eval {
+                                die "bad apple";
+                            };
+                            $writer->write('All Alright');
+                            $writer->close;
+                        },
+                    );
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+        $res->on_content_received(sub {
+            # no-op
+        });
+        lives_ok {
+            $res->recv;
+        };
     };
 }
 
