@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+     Added support for uncaught exceptions being thrown in applications.
 
 0.01 June 20 2011
      Initial release.
