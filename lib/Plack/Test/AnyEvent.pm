@@ -11,7 +11,6 @@ use Carp;
 use HTTP::Request;
 use HTTP::Message::PSGI;
 use IO::Handle;
-use Try::Tiny;
 
 use Plack::Test::AnyEvent::Response;
 
@@ -30,11 +29,7 @@ sub test_psgi {
         $env->{'psgi.streaming'}   = 1;
         $env->{'psgi.nonblocking'} = 1;
 
-        my $res = try {
-            $app->($env);
-        } catch {
-            Plack::Test::AnyEvent::Response->from_psgi([ 500, [ 'Content-Type' => 'text/plain' ], [ $_ ] ]);
-        };
+        my $res = $app->($env);
 
         if(ref($res) eq 'CODE') {
             my ( $status, $headers, $body );
@@ -42,38 +37,24 @@ sub test_psgi {
 
             my $cond = AnyEvent->condvar;
 
-            try {
-                $res->(sub {
-                    my ( $ref ) = @_;
-                    ( $status, $headers, $body ) = @$ref;
+            $res->(sub {
+                my ( $ref ) = @_;
+                ( $status, $headers, $body ) = @$ref;
 
-                    $cond->send;
+                $cond->send;
 
-                    unless(defined $body) {
-                        pipe $read, $write;
-                        $write = IO::Handle->new_from_fd($write, 'w');
-                        $write->autoflush(1);
-                        return $write;
-                    }
-                });
-            } catch {
-                ( $status, $headers, $body ) = (
-                    500,
-                    ['Content-Type' => 'text/plain'],
-                    [ $_ ],
-                );
-            };
+                unless(defined $body) {
+                    pipe $read, $write;
+                    $write = IO::Handle->new_from_fd($write, 'w');
+                    $write->autoflush(1);
+                    return $write;
+                }
+            });
 
             unless(defined $status) {
                 local $SIG{__DIE__} = __PACKAGE__->exception_handler($cond);
                 my $ex = $cond->recv;
-                if($ex) {
-                    ( $status, $headers, $body ) = (
-                        500,
-                        ['Content-Type' => 'text/plain'],
-                        [ $ex ],
-                    );
-                }
+                die $ex if defined $ex;
             }
 
             if(defined $body) {
