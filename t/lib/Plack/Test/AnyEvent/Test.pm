@@ -165,8 +165,9 @@ sub test_bad_app :Test(1) {
     test_psgi $app, sub {
         my ( $cb ) = @_;
 
-        my $res = $cb->(GET '/');
-        is $res->code, 500;
+        throws_ok {
+            $cb->(GET '/');
+        } qr/bad apple/;
     };
 }
 
@@ -211,8 +212,9 @@ sub test_bad_delayed_app :Test {
     test_psgi $app, sub {
         my ( $cb ) = @_;
 
-        my $res = $cb->(GET '/');
-        is $res->code, 500;
+        throws_ok {
+            my $res = $cb->(GET '/');
+        } qr/bad apple/;
     };
 }
 
@@ -275,9 +277,9 @@ sub test_bad_app_die_post_response :Test(2) {
     test_psgi $app, sub {
         my ( $cb ) = @_;
 
-        my $res = $cb->(GET '/');
-        is $res->code, 500;
-        like $res->content, qr/bad apple/;
+        throws_ok {
+            $cb->(GET '/');
+        } qr/bad apple/;
     };
 }
 
@@ -329,9 +331,9 @@ sub test_bad_app_die_in_response :Test(2) {
     test_psgi $app, sub {
         my ( $cb ) = @_;
 
-        my $res = $cb->(GET '/');
-        is $res->code, 500;
-        like $res->content, qr/bad apple/;
+        throws_ok {
+            $cb->(GET '/');
+        } qr/bad apple/;
     };
 }
 
