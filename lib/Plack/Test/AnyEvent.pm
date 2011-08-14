@@ -214,4 +214,14 @@ A single argument is passed to the callback; namely, the chunk itself.
 
 L<AnyEvent>, L<Plack>, L<Plack::Test>
 
+=begin comment
+
+=over
+
+=item exception_handler
+
+=back
+
+=end comment
+
 =cut
