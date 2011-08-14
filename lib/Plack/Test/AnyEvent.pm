@@ -42,19 +42,27 @@ sub test_psgi {
 
             my $cond = AnyEvent->condvar;
 
-            $res->(sub {
-                my ( $ref ) = @_;
-                ( $status, $headers, $body ) = @$ref;
+            try {
+                $res->(sub {
+                    my ( $ref ) = @_;
+                    ( $status, $headers, $body ) = @$ref;
 
-                $cond->send;
+                    $cond->send;
 
-                unless(defined $body) {
-                    pipe $read, $write;
-                    $write = IO::Handle->new_from_fd($write, 'w');
-                    $write->autoflush(1);
-                    return $write;
-                }
-            });
+                    unless(defined $body) {
+                        pipe $read, $write;
+                        $write = IO::Handle->new_from_fd($write, 'w');
+                        $write->autoflush(1);
+                        return $write;
+                    }
+                });
+            } catch {
+                ( $status, $headers, $body ) = (
+                    500,
+                    ['Content-Type' => 'text/plain'],
+                    [ $_ ],
+                );
+            };
 
             unless(defined $status) {
                 $cond->recv;
