@@ -65,7 +65,39 @@ sub test_psgi {
             };
 
             unless(defined $status) {
-                $cond->recv;
+                local $SIG{__DIE__} = sub {
+                    my $i = 0;
+
+                    my @last_eval_frame;
+
+                    while(my @info = caller($i)) {
+                        my ( $subroutine, $evaltext ) = @info[3, 6];
+
+                        if($subroutine eq '(eval)' && !defined($evaltext)) {
+                            @last_eval_frame = caller($i + 1);
+                            last;
+                        }
+                    } continue {
+                        $i++;
+                    }
+
+                    if(@last_eval_frame) {
+                        my ( $subroutine ) = $last_eval_frame[3];
+
+                        ## does this always work?
+                        if($subroutine =~ /^AnyEvent::Impl/) {
+                            $cond->send($_[0]);
+                        }
+                    }
+                };
+                my $ex = $cond->recv;
+                if($ex) {
+                    ( $status, $headers, $body ) = (
+                        500,
+                        ['Content-Type' => 'text/plain'],
+                        [ $ex ],
+                    );
+                }
             }
 
             if(defined $body) {
