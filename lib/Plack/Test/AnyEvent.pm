@@ -132,7 +132,9 @@ sub test_psgi {
                 );
             }
         } else {
-            $res = Plack::Test::AnyEvent::Response->from_psgi($res);
+            unless(ref($res) eq 'Plack::Test::AnyEvent::Response') {
+                $res = Plack::Test::AnyEvent::Response->from_psgi($res);
+            }
             $res->request($req);
         }
 
