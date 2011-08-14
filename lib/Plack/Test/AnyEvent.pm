@@ -65,31 +65,7 @@ sub test_psgi {
             };
 
             unless(defined $status) {
-                local $SIG{__DIE__} = sub {
-                    my $i = 0;
-
-                    my @last_eval_frame;
-
-                    while(my @info = caller($i)) {
-                        my ( $subroutine, $evaltext ) = @info[3, 6];
-
-                        if($subroutine eq '(eval)' && !defined($evaltext)) {
-                            @last_eval_frame = caller($i + 1);
-                            last;
-                        }
-                    } continue {
-                        $i++;
-                    }
-
-                    if(@last_eval_frame) {
-                        my ( $subroutine ) = $last_eval_frame[3];
-
-                        ## does this always work?
-                        if($subroutine =~ /^AnyEvent::Impl/) {
-                            $cond->send($_[0]);
-                        }
-                    }
-                };
+                local $SIG{__DIE__} = __PACKAGE__->exception_handler($cond);
                 my $ex = $cond->recv;
                 if($ex) {
                     ( $status, $headers, $body ) = (
@@ -142,6 +118,35 @@ sub test_psgi {
     };
 
     $client->($cb);
+}
+
+sub exception_handler {
+    my ( $class, $cond ) = @_;
+
+    return sub {
+        my $i = 0;
+
+        my @last_eval_frame;
+
+        while(my @info = caller($i)) {
+            my ( $subroutine, $evaltext ) = @info[3, 6];
+
+            if($subroutine eq '(eval)' && !defined($evaltext)) {
+                @last_eval_frame = caller($i + 1);
+                last;
+            }
+        } continue {
+            $i++;
+        }
+
+        if(@last_eval_frame) {
+            my ( $subroutine ) = $last_eval_frame[3];
+
+            if($subroutine =~ /^AnyEvent::Impl/) {
+                $cond->send($_[0]);
+            }
+        }
+    };
 }
 
 1;
