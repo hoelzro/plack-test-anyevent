@@ -457,4 +457,66 @@ sub test_responsible_app_streaming :Test(2) {
     };
 }
 
+sub test_infinite_request_shutdown :Test {
+    my $app = sub {
+        return sub {
+            my ( $respond ) = @_;
+
+            my $writer = $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+            ]);
+
+            my $timer;
+            my $count = 0;
+            $timer = AnyEvent->timer(
+                interval => 0.1,
+                cb       => sub {
+                    $writer->write($count++);
+                    ( undef ) = ( $timer ); ## keep a reference to $timer around
+                },
+            );
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+
+        my $expecting_call = 1;
+        my $seen_bad_call;
+
+        $res->on_content_received(sub {
+            my ( $chunk ) = @_;
+
+            unless($expecting_call) {
+                $seen_bad_call = 1;
+            }
+
+            if($chunk >= 5) {
+                $res->send;
+            }
+        });
+
+        $res->recv;
+
+        $expecting_call = 0;
+
+        my $res2 = $cb->(GET '/');
+
+        $res2->on_content_received(sub {
+            my ( $chunk ) = @_;
+
+            if($chunk >= 5) {
+                $res2->send;
+            }
+        });
+
+        $res2->recv;
+
+        ok !$seen_bad_call, "Don't want to see a callback after I've finished testing it";
+    };
+}
+
 1;
