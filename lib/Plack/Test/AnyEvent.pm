@@ -194,7 +194,60 @@ A single argument is passed to the callback; namely, the chunk itself.
 =head1 EXCEPTION HANDLING
 
 As of version 0.02, this module handles uncaught exceptions thrown by your code.
-If the exception occurs before
+If the exception occurs before your PSGI application returns a response, or
+directly in the response subroutine ref (if you return a subroutine as your
+application's response), C<$cb> will propagate the exception.  Otherwise,
+the exception is propagated by C<$res-E<gt>recv>.  Here's an example:
+
+  my $app = sub {
+    die 'thrown by $cb';
+
+    return sub {
+        my ( $respond ) = @_;
+
+        die 'still thrown by $cb';
+            
+        if($streaming) {
+            my $writer = $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+            ]);
+
+            die 'still thrown by $cb';
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 2,
+                cb    => sub {
+                    die 'thrown by $res->recv';
+                    $writer->write("Ok");
+                    $writer->close;
+                    undef $timer;
+                },
+            );
+        } else {
+            $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+                ['Ok'],
+            ]);
+
+            die 'still thrown by $cb';
+        }
+    };
+  };
+
+  test_psgi $app, sub {
+    my ( $cb ) = @_;
+
+    my $res = $cb->(GET '/');
+
+    $res->on_content_received(sub {
+        ...
+    });
+
+    $res->recv;
+  };
 
 =head1 SEE ALSO
 
