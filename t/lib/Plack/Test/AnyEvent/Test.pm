@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use parent 'Test::Class';
 
+use AnyEvent;
 use HTTP::Request::Common;
 use Test::Exception;
 use Test::More;
@@ -13,6 +14,13 @@ sub startup :Test(startup) {
     my ( $self ) = @_;
 
     $Plack::Test::Impl = $self->impl_name;
+
+    my $timer = AnyEvent->timer(
+        after => 1,
+        cb    => sub {},
+    ); # just get the ball rolling
+
+    diag "Running on $AnyEvent::MODEL";
 }
 
 sub test_simple_app :Test(3) {
