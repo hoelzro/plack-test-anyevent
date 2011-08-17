@@ -265,6 +265,8 @@ doesn't break known good ones.  The known good event loops are:
 
 =item Event
 
+=item Glib
+
 =item Perl
 
 =back
