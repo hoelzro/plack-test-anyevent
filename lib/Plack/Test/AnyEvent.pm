@@ -271,6 +271,12 @@ doesn't break known good ones.  The known good event loops are:
 
 =back
 
+This list isn't exclusive; ie. just because your event loop isn't on this list
+doesn't mean it doesn't work.  Also, even if your event loop doesn't pass
+the exception tests, the general usage of this module (testing requests,
+handling streaming results and long polling) should work on any AnyEvent loop.
+Just don't throw any uncaught exceptions =).
+
 =head1 SEE ALSO
 
 L<AnyEvent>, L<Plack>, L<Plack::Test>
