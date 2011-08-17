@@ -249,6 +249,26 @@ the exception is propagated by C<$res-E<gt>recv>.  Here's an example:
     $res->recv;
   };
 
+Note: The exception handling code may or may not work with your event loop.
+Please run the tests in this distribution with
+L<AnyEvent/"PERL_ANYEVENT_MODEL"> set to see if it works with your event loop
+of choice.  Patches will be accepted to accommodate loops, as long as it
+doesn't break known good ones.  The known good event loops are:
+
+=over
+
+=item Default
+
+=item Cocoa
+
+=item EV
+
+=item Event
+
+=item Perl
+
+=back
+
 =head1 SEE ALSO
 
 L<AnyEvent>, L<Plack>, L<Plack::Test>
