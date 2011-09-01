@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+     Fix to work with AnyEvent 6.
 
 0.02 August 16 2011
      Added support for uncaught exceptions being thrown in applications.
