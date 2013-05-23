@@ -444,6 +444,7 @@ sub test_responsible_app_streaming :Test(2) {
                             };
                             $writer->write('All Alright');
                             $writer->close;
+                            undef $timer;
                         },
                     );
                 },
