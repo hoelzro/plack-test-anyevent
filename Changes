@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+     Fix broken test.
 
 0.03 August 31 2011
      Fix to work with AnyEvent 6.
