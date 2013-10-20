@@ -2,6 +2,9 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.05 Oct 20 2013
+     Allow on_content_received to work for non-streaming responses. Maki-Daisuke++
+
 0.04 May 23 2013
      Fix broken test.
 
