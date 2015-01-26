@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.06 January 26 2015
      Fix an issue with PSGI conformance (thanks, Daisuke Maki!)
 
 0.05 October 20 2013
