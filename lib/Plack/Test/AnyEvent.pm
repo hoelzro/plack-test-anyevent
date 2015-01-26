@@ -59,16 +59,18 @@ sub test_psgi {
 
             if(defined $body) {
                 $res = Plack::Test::AnyEvent::Response->from_psgi([ $status, $headers, $body ]);
+                $res->{'_cond'} = AnyEvent->condvar;
+                $res->{'_cond'}->send;
             } else {
                 push @$headers, 'Transfer-Encoding', 'chunked';
                 $res = Plack::Test::AnyEvent::Response->from_psgi([ $status, $headers, [] ]);
-                $res->on_content_received(sub {});
                 my $h;
                 $res->{'_cond'} = AnyEvent->condvar(cb => sub {
                     undef $h;
                     close $read;
                     close $write;
                 });
+                $res->on_content_received(sub {});
 
                 $h = AnyEvent::Handle->new(
                     fh      => $read,
