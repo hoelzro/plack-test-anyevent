@@ -528,4 +528,30 @@ sub test_infinite_request_shutdown :Test {
     };
 }
 
+sub test_three_element_delayed_response :Test(3) {
+    my $app = sub {
+        return sub {
+            my ( $respond ) = @_;
+
+            $respond->([
+                200,
+                [ 'Content-Type' => 'text/plain' ],
+                ['OK']
+            ]);
+        };
+    };
+
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
+
+        my $res = $cb->(GET '/');
+        $res->on_content_received(sub{
+            is $res->code, 200, 'Status code should match';
+            is $res->content_type, 'text/plain', 'Content-Type header should match';
+            is $res->content, 'OK', 'Content should match';
+        });
+        $res->recv;
+    };
+}
+
 1;
