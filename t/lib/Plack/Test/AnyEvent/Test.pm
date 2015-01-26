@@ -21,6 +21,31 @@ sub startup :Test(startup) {
     ); # just get the ball rolling
 
     diag "Running on $AnyEvent::MODEL";
+
+    do {
+        no warnings 'once'; ## no critic (TestingAndDebugging::ProhibitNoWarnings)
+        $EV::DIED = sub {
+            unless($@ =~ /bad apple/) {
+                warn $@;
+            }
+        };
+        $Event::DIED = sub {
+            my ( undef, $error ) = @_;
+
+            unless($error =~ /bad apple/ || $error eq '?') {
+                warn $error;
+            }
+        };
+
+        eval { Glib->install_exception_handler(sub {
+            my ( $error ) = @_;
+
+            unless($error =~ /bad apple/) {
+                warn $error;
+            }
+            return 1;
+        })};
+    };
 }
 
 sub test_simple_app :Test(3) {
