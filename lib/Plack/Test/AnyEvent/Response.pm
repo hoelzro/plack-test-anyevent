@@ -38,6 +38,7 @@ sub on_content_received {
 
     if($cb) {
         $self->{'_on_content_received'} = $cb;
+        $cb->($self->content)  if $self->{_cond}->ready;
     }
     return $self->{'_on_content_received'};
 }
