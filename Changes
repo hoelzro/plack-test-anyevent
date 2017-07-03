@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+     Fix some dist issues (thanks, Paul Cochrane!)
 
 0.06 January 26 2015
      Fix an issue with PSGI conformance (thanks, Daisuke Maki!)
