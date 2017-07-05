@@ -80,7 +80,7 @@ the exception is propagated by C<$res-E<gt>recv>.  Here's an example:
         my ( $respond ) = @_;
 
         die 'still thrown by $cb';
-            
+
         if($streaming) {
             my $writer = $respond->([
                 200,
