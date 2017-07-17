@@ -145,7 +145,7 @@ sub test_streaming_app :Test(6) {
 }
 
 sub test_infinite_app :Test(6) {
-    return q{test doesn't work on Windows} if $^O eq 'MSWin32';
+    #return q{test doesn't work on Windows} if $^O eq 'MSWin32';
 
     my $app = sub {
         my ( $env ) = @_;
@@ -173,6 +173,9 @@ sub test_infinite_app :Test(6) {
             );
         };
     };
+
+    local $SIG{ARLM} = sub { die "alarm\n" };
+    alarm 30;
 
     test_psgi $app, sub {
         my ( $cb ) = @_;
