@@ -175,7 +175,7 @@ sub test_infinite_app :Test(6) {
     };
 
     local $SIG{ALRM} = sub { die "alarm\n" };
-    alarm 30;
+    alarm 10;
 
     test_psgi $app, sub {
         my ( $cb ) = @_;
@@ -188,11 +188,14 @@ sub test_infinite_app :Test(6) {
         my $i = 0;
         $res->on_content_received(sub {
             my ( $chunk ) = @_;
+            diag "chunk received";
             is $chunk, $i++;
             if($i > 2) {
+                diag "it's over";
                 $res->send;
             }
         });
+        diag "waiting on condvar";
         $res->recv;
     };
 }
