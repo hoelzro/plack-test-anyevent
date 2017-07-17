@@ -49,7 +49,7 @@ sub test_psgi {
 
                 unless(defined $body) {
                     ( $read, $write ) = winsocketpair();
-                    $write = IO::Handle->new_from_fd($write, 'w') or die "shit: $!";
+                    $write = IO::Handle->new_from_fd(fileno($write), 'w') or die "shit: $!";
                     $write->autoflush(1);
                     return $write;
                 }
