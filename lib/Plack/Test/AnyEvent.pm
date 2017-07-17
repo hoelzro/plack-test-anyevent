@@ -12,6 +12,8 @@ use HTTP::Request;
 use HTTP::Message::PSGI;
 use IO::Handle;
 
+use Win32::Socketpair;
+
 use Test::More;
 
 use Plack::Test::AnyEvent::Response;
@@ -46,7 +48,7 @@ sub test_psgi {
                 $cond->send;
 
                 unless(defined $body) {
-                    pipe $read, $write;
+                    ( $read, $write ) = winsocketpair();
                     $write = IO::Handle->new_from_fd($write, 'w');
                     $write->autoflush(1);
                     return $write;
@@ -106,6 +108,7 @@ sub test_psgi {
             # make sure that the on_content_received callback is invoked inside
             # of the event loop
             my $faux_timer;
+            # XXX doesn't AnyEvent have an idle action or something for this?
             $faux_timer = AnyEvent->timer(
                 after => 0.001,
                 cb    => sub {

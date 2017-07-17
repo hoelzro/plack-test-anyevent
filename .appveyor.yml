@@ -7,7 +7,7 @@ install:
   - if not exist "C:\Strawberry" choco install strawberryperl --version 5.24.1.1
   - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
   - cd C:\projects\%APPVEYOR_PROJECT_NAME%
-  - cpanm --notest Dist::Zilla
+  - cpanm --notest Dist::Zilla Win32::Socketpair
   - dzil authordeps --missing | cpanm --notest || type C:\Users\appveyor\.cpanm\build.log ; perl -e "exit 1"
   - dzil listdeps --author --missing | cpanm --notest || type C:\Users\appveyor\.cpanm\build.log ; perl -e "exit 1"
 
