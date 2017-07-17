@@ -12,4 +12,4 @@ install:
   - dzil listdeps --author --missing | cpanm --notest || type C:\Users\appveyor\.cpanm\build.log ; perl -e "exit 1"
 
 build_script:
-  - dzil test --author --release
+  - prove -lv
