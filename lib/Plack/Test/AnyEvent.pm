@@ -12,6 +12,8 @@ use HTTP::Request;
 use HTTP::Message::PSGI;
 use IO::Handle;
 
+use Test::More;
+
 use Plack::Test::AnyEvent::Response;
 
 # code adapted from Plack::Test::MockHTTP
