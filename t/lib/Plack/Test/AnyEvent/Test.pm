@@ -174,7 +174,7 @@ sub test_infinite_app :Test(6) {
         };
     };
 
-    local $SIG{ARLM} = sub { die "alarm\n" };
+    local $SIG{ALRM} = sub { die "alarm\n" };
     alarm 30;
 
     test_psgi $app, sub {
