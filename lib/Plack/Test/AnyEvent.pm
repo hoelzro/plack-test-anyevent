@@ -12,7 +12,7 @@ use HTTP::Request;
 use HTTP::Message::PSGI;
 use IO::Handle;
 
-use Win32::Socketpair;
+use Win32::Socketpair 'winsocketpair';
 
 use Test::More;
 
