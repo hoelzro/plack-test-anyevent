@@ -48,7 +48,7 @@ sub test_psgi {
                 $cond->send;
 
                 unless(defined $body) {
-                    ( $read, $write ) = winsocketpair();
+                    ( $read, $write ) = winsocketpair() or die "unable to open socket pair: $!";
                     $write = IO::Handle->new_from_fd(fileno($write), 'w') or die "shit: $!";
                     $write->autoflush(1);
                     return $write;
