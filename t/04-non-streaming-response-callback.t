@@ -34,7 +34,7 @@ my $app = sub {
 };
 
 SKIP: {
-    skip q{streaming doesn't work on Windows}, 5 if $O eq 'MSWin32';
+    skip q{streaming doesn't work on Windows}, 5 if $^O eq 'MSWin32';
 
     test_psgi $app, sub {
         my ( $cb ) = @_;
