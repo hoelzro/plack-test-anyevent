@@ -75,16 +75,19 @@ sub test_psgi {
                 $h = AnyEvent::Handle->new(
                     fh      => $read,
                     on_read => sub {
+                        diag "read some stuff";
                         my $buf = $h->rbuf;
                         $h->rbuf = '';
                         $res->content($res->content . $buf);
                         $res->on_content_received->($buf);
                     },
                     on_eof => sub {
+                        diag "EOF";
                         $res->send;
                     },
                     on_error => sub {
                         my ( undef, undef, $msg ) = @_;
+                        diag "Error";
                         warn $msg;
                         $res->send;
                     },
