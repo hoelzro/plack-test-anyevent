@@ -168,7 +168,8 @@ sub test_infinite_app :Test(6) {
                                                    # don't want trouble during
                                                    # testing.
                     diag "writing chunk: $i";
-                    $writer->write($i++);
+                    $writer->write($i++) or die "failed to write: $!";
+                    # ↓ WTF?
                     ( undef ) = $timer; # keep a reference to $timer
                 },
             );
