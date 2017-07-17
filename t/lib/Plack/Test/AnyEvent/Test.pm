@@ -143,7 +143,6 @@ sub test_streaming_app :Test(6) {
 }
 
 sub test_infinite_app :Test(6) {
-    diag $^O;
     return q{test doesn't work on Windows} if $^O eq 'MSWin32';
 
     my $app = sub {
@@ -449,6 +448,8 @@ sub test_bad_app_streaming :Test(2) {
 }
 
 sub test_responsible_app_streaming :Test(2) {
+    return q{test doesn't work on Windows} if $^O eq 'MSWin32';
+
     my $app = sub {
         my ( $env ) = @_;
 
@@ -495,7 +496,6 @@ sub test_responsible_app_streaming :Test(2) {
 }
 
 sub test_infinite_request_shutdown :Test {
-    diag $^O;
     return q{test doesn't work on Windows} if $^O eq 'MSWin32';
     my $app = sub {
         return sub {
