@@ -99,6 +99,8 @@ sub test_delayed_app :Test(3) {
 }
 
 sub test_streaming_app :Test(6) {
+    return q{test doesn't work on Windows} if $^O eq 'MSWin32';
+
     my $app = sub {
         my ( $env ) = @_;
 
