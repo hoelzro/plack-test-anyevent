@@ -33,25 +33,29 @@ my $app = sub {
     }
 };
 
-test_psgi $app, sub {
-    my ( $cb ) = @_;
+SKIP: {
+    skip q{streaming doesn't work on Windows}, 5 if $O eq 'MSWin32';
 
-    my $num_callbacks_invoked = 0;
+    test_psgi $app, sub {
+        my ( $cb ) = @_;
 
-    my $res = $cb->(GET '/?non-blocking');
-    is $res->code, 200;
-    $res->on_content_received(sub {
-        $num_callbacks_invoked++;
-        is $res->content, 'ok';
-    });
-    $res->recv;
+        my $num_callbacks_invoked = 0;
 
-    my $res = $cb->(GET '/');
-    is $res->code, 200;
-    $res->on_content_received(sub{
-        $num_callbacks_invoked++;
-        is $res->content, 'ok';
-    });
-    $res->recv;
-    is $num_callbacks_invoked, 2, 'make sure that both callbacks have been invoked';
-};
+        my $res = $cb->(GET '/?non-blocking');
+        is $res->code, 200;
+        $res->on_content_received(sub {
+            $num_callbacks_invoked++;
+            is $res->content, 'ok';
+        });
+        $res->recv;
+
+        my $res = $cb->(GET '/');
+        is $res->code, 200;
+        $res->on_content_received(sub{
+            $num_callbacks_invoked++;
+            is $res->content, 'ok';
+        });
+        $res->recv;
+        is $num_callbacks_invoked, 2, 'make sure that both callbacks have been invoked';
+    };
+}
