@@ -143,6 +143,9 @@ sub test_streaming_app :Test(6) {
 }
 
 sub test_infinite_app :Test(6) {
+    print $^O, "\n";
+    return q{test doesn't work on Windows} if $^O eq 'MSWin32';
+
     my $app = sub {
         my ( $env ) = @_;
 
