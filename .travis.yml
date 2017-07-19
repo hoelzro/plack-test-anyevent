@@ -10,5 +10,5 @@ perl:
   - "5.22"
   - "5.24"
   - "5.26"
-install: cpanm --quiet --notests AnyEvent autodie Plack HTTP::Request::Common Test::Class Test::More parent
+install: cpanm --quiet --notest AnyEvent autodie Plack HTTP::Request::Common Test::Class Test::More parent
 script: prove -l
