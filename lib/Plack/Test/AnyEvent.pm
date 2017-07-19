@@ -4,9 +4,9 @@ package Plack::Test::AnyEvent;
 ## use critic (RequireUseStrict)
 use strict;
 use warnings;
-use autodie qw(pipe);
 
 use AnyEvent::Handle;
+use AnyEvent::Util qw (portable_pipe);
 use Carp;
 use HTTP::Request;
 use HTTP::Message::PSGI;
@@ -44,7 +44,7 @@ sub test_psgi {
                 $cond->send;
 
                 unless(defined $body) {
-                    pipe $read, $write;
+                    ( $read, $write ) = portable_pipe or die $!;
                     $write = IO::Handle->new_from_fd($write, 'w');
                     $write->autoflush(1);
                     return $write;
