@@ -1,8 +1,5 @@
 language: perl
 perl:
-  - "5.8"
-  - "5.10"
-  - "5.12"
   - "5.14"
   - "5.16"
   - "5.18"
@@ -10,5 +7,8 @@ perl:
   - "5.22"
   - "5.24"
   - "5.26"
+arch: 
+  - AMD64
+  - ppc64le
 install: cpanm --quiet --notest AnyEvent autodie Plack HTTP::Request::Common Test::Class Test::More parent
 script: prove -l
